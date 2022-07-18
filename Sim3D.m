@@ -1,10 +1,11 @@
+tStart = cputime;
 syms x y z v1 v2 v3 
-ntime=1000000;stepsize = 0.005; 
+ntime=1000000;stepsize = 0.1; 
 X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
 
 o=[25 25 20]; rad=3;
-delta = 17.1972;
-delta1=delta;delta2=delta;delta3=delta; beta=0.2568; 
+delta = 8.90;
+delta1=delta;delta2=delta;delta3=delta; beta=0.31; 
 
 W=0.5*((x-o(1))^2+(y-o(2))^2+(z-o(3))^2-(rad)^2);
 V=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2+v1^2+v2^2+v3^2); 
@@ -33,30 +34,45 @@ earlystop = 0;
 axis([0 50 0 50 0 50]) 
 grid on 
 
-delete('XYZ.txt')
+delete('XYZ.txt');
+% stepsize = 0.05;
 
  for t=1:ntime
      drawnow 
-var={x,y,z,v1,v2,v3};
-varval={X(1),X(2),X(3),X(4),X(5),X(6)};
+    var={x,y,z,v1,v2,v3};
+    X4 = zeros(6,4);
+    X4(:,1) = X(:);
+    kx = zeros(6,4);
+%     w = (subs(W,var,varval));
+%     if w < 4
+%         stepsize = 0.01;%*min(1,sqrt(0.04*beta*delta));
+%     else
+%         stepsize = 0.1;
+%     end
+        
+for J = 1:4
+    %     stepsize = min(1,12.5/delta)*min(1, delta/10)*0.05*min(1 , 0.02*exp(w/16)+exp(0.4*(w-16))); 
+    
+    % ODEs
+    varval={X4(1,J),X4(2,J),X4(3,J),X4(4,J),X4(5,J),X4(6,J)};
+    FX(1)=X(4);
+    FX(2)=X(5);
+    FX(3)=X(6);
+    FX(4)=subs(sigma1,var,varval); 
+    FX(5)=subs(sigma2,var,varval);
+    FX(6)=subs(sigma3,var,varval);
+    %     w = (subs(W,var,varval));
+    % RK4 to numerically solve the ODE
+    for I = 1:length(X)
+        kx(I,J) = stepsize * FX(I);
+        if J < 4
+            X4(I,J+1) = X(I) + kx (I,J)*(0.5)*(1+floor(J/3));
+        else
+            X(I) = X(I) + (kx(I,1) + 2 * (kx(I,2) + kx(I,3)) + kx(I,4)) / 6;
+        end
+    end
+end
 
-% ODEs
-FX(1)=X(4);
-FX(2)=X(5);
-FX(3)=X(6);
-FX(4)=subs(sigma1,var,varval); 
-FX(5)=subs(sigma2,var,varval);
-FX(6)=subs(sigma3,var,varval);
-w = (subs(W,var,varval));
-stepsize = 0.03*min(1 , 0.02*exp(w/25)+0.5*exp(0.15*(w-16))); 
-
-% RK4 to numerically solve the ODE
- for I = 1:length(X)
-kX1(I) = stepsize * FX(I); X(I) = X(I) + kX1 (I) / 2;
-kX2(I) = stepsize * FX(I); X(I) = X(I) + kX2 (I) / 2;
-kX3(I) = stepsize * FX(I); X(I) = X(I) + kX3 (I) / 2;
-X(I) = X(I) + (kX1(I) + 2 * (kX2(I) + kX3(I)) + stepsize * FX(I)) / 6;
- end
  
  if earlystop
     t=ntime;
@@ -67,3 +83,4 @@ X(I) = X(I) + (kX1(I) + 2 * (kX2(I) + kX3(I)) + stepsize * FX(I)) / 6;
   dlmwrite('XYZ.txt',[X(1),X(2),X(3)], 'newline', 'pc', '-append')
   Y = dlmread('XYZ.txt'); set(h,'XData',Y(:,1),'YData',Y(:,2),'ZData',Y(:,3)) 
  end
+tEnd = cputime-tStart;
