@@ -1,15 +1,15 @@
 tbegin = cputime;
 prior_lower = 1e-4;
-prior_upper = 1;
-sd = (prior_upper-prior_lower)/4;
+prior_upper = 5;
+sd = 0.1;
 % prior = makedist("Uniform","lower",10^prior_lower,"upper",10^prior_upper);
 prior = makedist("Uniform","lower",prior_lower,"upper",prior_upper);
-sigma_delta = 3;
-mu_delta = [10,15];
-prior_delta = makedist("Normal","mu",sum(mu_delta)/2,"sigma",sqrt(2)*sigma_delta);
+sigma_delta = 1;
+mu_delta = [15,25];
+prior_delta = makedist("Normal","mu",sum(mu_delta)/2,"sigma",sqrt(20)*sigma_delta);
 delta = sum(mu_delta)/2;
-beta_prior = 0.1;
-theta = [0.1,delta, mu_delta, sigma_delta];
+beta_prior = 0.5;
+theta = [0.5,delta, mu_delta, sigma_delta];
 beta = beta_prior;
 numchains = 1;
 % tiledlayout(numchains+1,1)
@@ -20,16 +20,17 @@ iterations = 2e3;
 acc = 0;
 rej = 0;
 llf = 4;
+sigsq = 0.3464;
 % fprintf("d1 = %2.4f,d2 = %2.4f",distance(theta,0.05),distance(theta,0.005))
 [path,dz] = simulate(theta);
 db = distance(path, dz);
-sigsq = db^2/llf;
 ll = zeros(iterations+1,1);
 betas = zeros(iterations,1);
 deltas = zeros(iterations,1);
 ll(1) = llf/2 -(db^2/(2*sigsq));
 % h = plot(beta,delta,'.');hold on;
-for i = 1:iterations   
+for i = 1:iterations
+    fprintf("%d ",i);
     betas(i) = beta;
     deltas(i) = delta;
     ll(i+1) = ll(i);
@@ -43,7 +44,7 @@ for i = 1:iterations
 %     betanew = 10^betanew;
     while 1
     deltanew = random("Normal", delta, sigma_delta);
-    if (deltanew > 5) && (deltanew < 20)
+    if (deltanew > 5) && (deltanew <25)
         break
     end
     end
@@ -67,8 +68,11 @@ for i = 1:iterations
 %         fprintf('Current\n Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i));
         ll(i+1) = ll(i);
     end
+    fprintf('Time taken: %7.4f seconds\n',cputime-tbegin);
+     fprintf('Current Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i+1));
 %     set(h,'XData',betas(1:i),'YData',deltas(1:i)) ;
 %     drawnow;
+
     
     
 end
@@ -125,14 +129,13 @@ end
 % sqrb = sqrt(10*beta);
 
 syms x y z v1 v2 v3 
-ntime=1000000;
+ntime=1000;
 
 % ssf = max(0.02*min(1,(sigma_delta/(delta-mu_delta(1)))^2),0.025*min(1,(sigma_delta/(delta-mu_delta(2)))^2));
 % ssf = min(sqrb,1)*max(ssf, 0.02*min(1, (sigma_delta/(delta-(sum(mu_delta)/2)))^2));
 fprintf("Simulating Theta = (%2.4f,%2.4f)\n",beta,delta);
 tstart = cputime;
 X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
-% X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
 delX = sqrt((X(1)-tau(1))^2  + (X(2)-tau(2))^2 + (X(3)-tau(3))^2 );
 % delX = (X(1)-tau(1))^2  + (X(2)-tau(2))^2 + (X(3)-tau(3))^2;
 o=[25 25 20]; rad=3;
@@ -156,7 +159,7 @@ sigma3 = -(delta3*v3+diff(L,z));
 
 % Draw Obsatcle
 % [X1,Y1,Z1] =  sphere(20); 
-%  hobs = surf(o(1)+X1*rad,o(2)+Y1*rad,o(3)+Z1*rad);set(hobs,'MarkerSize',1, 'FaceColor','r');
+% hobs = surf(o(1)+X1*rad,o(2)+Y1*rad,o(3)+Z1*rad);set(hobs,'MarkerSize',1, 'FaceColor','r');
 
 % Button to early stop
 % hstop = uicontrol('Style','pushbutton','String','Stop', 'Position',[30 0 80 10],'callback','earlystop = 1;'); 
@@ -169,7 +172,7 @@ sigma3 = -(delta3*v3+diff(L,z));
 Y = zeros(ntime,3);
 Y(1,:) = X(1:3);
  for t=2:ntime
-%      drawnow 
+     drawnow 
 var={x,y,z,v1,v2,v3};
 varval={X(1),X(2),X(3),X(4),X(5),X(6)};
 % varval={X(1),X(2),X(3),X(4),X(5),X(6)};
@@ -180,7 +183,7 @@ stepsize = 0.1;
 if control
    w = (subs(W,var,varval));
     if w < 4
-        stepsize = 0.01;
+        stepsize = 0.05;
     else
         stepsize = 0.1;
     end

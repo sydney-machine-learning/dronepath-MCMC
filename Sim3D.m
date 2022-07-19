@@ -4,8 +4,8 @@ ntime=1000000;stepsize = 0.1;
 X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
 
 o=[25 25 20]; rad=3;
-delta = 8.90;
-delta1=delta;delta2=delta;delta3=delta; beta=0.31; 
+delta = 24.90;
+delta1=delta;delta2=delta;delta3=delta; beta=0.1773; 
 
 W=0.5*((x-o(1))^2+(y-o(2))^2+(z-o(3))^2-(rad)^2);
 V=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2+v1^2+v2^2+v3^2); 
