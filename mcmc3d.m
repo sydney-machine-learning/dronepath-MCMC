@@ -1,15 +1,15 @@
 tbegin = cputime;
 prior_lower = 1e-4;
 prior_upper = 5;
-sd = 0.1;
+sd = 0.2;
 % prior = makedist("Uniform","lower",10^prior_lower,"upper",10^prior_upper);
 prior = makedist("Uniform","lower",prior_lower,"upper",prior_upper);
 sigma_delta = 1;
 mu_delta = [15,25];
 prior_delta = makedist("Normal","mu",sum(mu_delta)/2,"sigma",sqrt(20)*sigma_delta);
 delta = sum(mu_delta)/2;
-beta_prior = 0.5;
-theta = [0.5,delta, mu_delta, sigma_delta];
+beta_prior = 2.5;
+theta = [12.5,delta, mu_delta, sigma_delta];
 beta = beta_prior;
 numchains = 1;
 % tiledlayout(numchains+1,1)
@@ -19,8 +19,10 @@ iterations = 2e3;
 % iterations = 5;
 acc = 0;
 rej = 0;
-llf = 4;
-sigsq = 0.3464;
+llf = 25;
+[path1, dz1] = simulate([0.1,20,0,0]);
+sigsq = distance(path1,dz1)^2/llf;
+% sigsq = 0.3464;
 % fprintf("d1 = %2.4f,d2 = %2.4f",distance(theta,0.05),distance(theta,0.005))
 [path,dz] = simulate(theta);
 db = distance(path, dz);
@@ -61,15 +63,15 @@ for i = 1:iterations
         delta = deltanew;
         acc = acc + 1; 
 %         paths(1:length(path),:,acc) = path; 
-%         fprintf('%d Accepted\n Theta = (%4.4f,%2.4f) Likelihood=(%4.8f,%2.4f,%2.4f)\n', i, beta, delta, ll(i+1), alpha, likelihood_factor);
+        fprintf('%d Accepted\n Theta = (%4.4f,%2.4f) Likelihood=(%4.8f,%2.4f,%2.4f)\n', i, beta, delta, ll(i+1), alpha, likelihood_factor);
     else
         rej = rej+1;
-%         fprintf('%d Rejected Likelihood=(%4.8f,%2.4f,%2.4f)\n',i, ll(i+1), alpha, likelihood_factor);
-%         fprintf('Current\n Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i));
+        fprintf('%d Rejected Likelihood=(%4.8f,%2.4f,%2.4f)\n',i, ll(i+1), alpha, likelihood_factor);
+        fprintf('Current Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i));
         ll(i+1) = ll(i);
     end
     fprintf('Time taken: %7.4f seconds\n',cputime-tbegin);
-     fprintf('Current Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i+1));
+%      fprintf('Current Theta = (%4.4f,%2.4f) LogLikelihood=%4.8f\n', beta, delta, ll(i+1));
 %     set(h,'XData',betas(1:i),'YData',deltas(1:i)) ;
 %     drawnow;
 
@@ -138,14 +140,16 @@ tstart = cputime;
 X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
 delX = sqrt((X(1)-tau(1))^2  + (X(2)-tau(2))^2 + (X(3)-tau(3))^2 );
 % delX = (X(1)-tau(1))^2  + (X(2)-tau(2))^2 + (X(3)-tau(3))^2;
-o=[25 25 20]; rad=3;
+o=[27 25 25]; rad=5;
+o2 = [15 34 8];
 delta1=delta;delta2=delta;delta3=delta; 
 
 W=0.5*((x-o(1))^2+(y-o(2))^2+(z-o(3))^2-(rad)^2);
+W2=0.5*((x-o2(1))^2+(y-o2(2))^2+(z-o2(3))^2-(rad)^2);
 V=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2+v1^2+v2^2+v3^2); 
 F=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2);
 
-L=V+F*beta/W;
+L=V+F*beta*(1/W+1/W2);
 sigma1 = -(delta1*v1+diff(L,x));
 sigma2 = -(delta2*v2+diff(L,y));
 sigma3 = -(delta3*v3+diff(L,z)); 
@@ -153,26 +157,31 @@ sigma3 = -(delta3*v3+diff(L,z));
 % Draw trajectory
 % h = plot3(X(1),X(2),X(3),'-');hold on
 
+%Draw Start
+% hs = plot3(X(1),X(2),X(3),' . ');set(hs,'MarkerSize',10);hold on
+
 % Draw target
-%  ht = plot3(tau(1),tau(2),tau(3),' . ');set(ht,'MarkerSize',100);
+%  ht = plot3(tau(1),tau(2),tau(3),' . ');set(ht,'MarkerSize',10);
 % hold on 
 
 % Draw Obsatcle
 % [X1,Y1,Z1] =  sphere(20); 
 % hobs = surf(o(1)+X1*rad,o(2)+Y1*rad,o(3)+Z1*rad);set(hobs,'MarkerSize',1, 'FaceColor','r');
+% [X2,Y2,Z2] =  sphere(20); 
+%  hobs = surf(o2(1)+X2*rad,o2(2)+Y2*rad,o2(3)+Z2*rad);set(hobs,'MarkerSize',1, 'FaceColor','b');
 
 % Button to early stop
 % hstop = uicontrol('Style','pushbutton','String','Stop', 'Position',[30 0 80 10],'callback','earlystop = 1;'); 
 % earlystop = 0;
 
 % axis([0 50 0 50 0 50]) 
-% grid on 
+grid on 
 
 % delete('XYZ.txt')
 Y = zeros(ntime,3);
 Y(1,:) = X(1:3);
  for t=2:ntime
-     drawnow 
+%      drawnow 
 var={x,y,z,v1,v2,v3};
 varval={X(1),X(2),X(3),X(4),X(5),X(6)};
 % varval={X(1),X(2),X(3),X(4),X(5),X(6)};
@@ -181,7 +190,7 @@ X4(:,1) = X(:);
 kx = zeros(6,4);
 stepsize = 0.1;
 if control
-   w = (subs(W,var,varval));
+   w = min(subs(W,var,varval),subs(W2,var,varval));
     if w < 4
         stepsize = 0.05;
     else
@@ -235,6 +244,8 @@ end
  for k = 1:3
  Y(t+1,k) = tau(k);
  end
+%  set(h,'XData',Y(1:t+1,1),'YData',Y(1:t+1,2),'ZData',Y(1:t+1,3)) 
+%  drawnow 
 %  delete(h);
 trajectory = Y(1:t+1,:);
 fprintf('Time taken for simulation: %2.4f\n',cputime-tstart);end

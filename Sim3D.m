@@ -3,15 +3,17 @@ syms x y z v1 v2 v3
 ntime=1000000;stepsize = 0.1; 
 X = [10 40 5 0.1 0.1 0.1]; tau=[45 5 45];
 
-o=[25 25 20]; rad=3;
+o=[25 25 25]; rad=4;
+o2 = [15 35 10];
 delta = 24.90;
 delta1=delta;delta2=delta;delta3=delta; beta=0.1773; 
 
 W=0.5*((x-o(1))^2+(y-o(2))^2+(z-o(3))^2-(rad)^2);
+W2=0.5*((x-o2(1))^2+(y-o2(2))^2+(z-o2(3))^2-(rad)^2);
 V=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2+v1^2+v2^2+v3^2); 
 F=0.5*((x-tau(1))^2+(y-tau(2))^2+(z-tau(3))^2);
 
-L=V+F*beta/W;
+L=V+F*beta*(1/W+1/W2);
 sigma1 = -(delta1*v1+diff(L,x));
 sigma2 = -(delta2*v2+diff(L,y));
 sigma3 = -(delta3*v3+diff(L,z)); 
@@ -26,6 +28,8 @@ hold on
 % Draw Obsatcle
 [X1,Y1,Z1] =  sphere(20); 
  hobs = surf(o(1)+X1*rad,o(2)+Y1*rad,o(3)+Z1*rad);set(hobs,'MarkerSize',1, 'FaceColor','r');
+ [X2,Y2,Z2] =  sphere(20); 
+ hobs = surf(o2(1)+X2*rad,o2(2)+Y2*rad,o2(3)+Z2*rad);set(hobs,'MarkerSize',1, 'FaceColor','b');
 
 % Button to early stop
 hstop = uicontrol('Style','pushbutton','String','Stop', 'Position',[30 0 80 10],'callback','earlystop = 1;'); 
